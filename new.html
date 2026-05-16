@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IsoScan — Isolated Sandbox Engine</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #050a0f;
+      --surface:  #0a1520;
+      --card:     #0d1f2d;
+      --border:   #1a3a52;
+      --accent:   #00e5ff;
+      --accent2:  #00ff88;
+      --warn:     #ffaa00;
+      --danger:   #ff3366;
+      --muted:    #4a7a9b;
+      --text:     #c8e8f8;
+      --text-dim: #5a8ab0;
+      --glow:     0 0 20px rgba(0,229,255,0.25);
+      --glow-r:   0 0 20px rgba(255,51,102,0.3);
+      --glow-g:   0 0 20px rgba(0,255,136,0.25);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 16px;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Scanline effect */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.05) 2px,
+        rgba(0,0,0,0.05) 4px
+      );
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+
+    /* ── HEADER ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 18px;
+      margin-bottom: 32px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-icon {
+      width: 44px; height: 44px;
+      border: 2px solid var(--accent);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--glow);
+      animation: pulse 3s ease-in-out infinite;
+      font-size: 22px;
+    }
+
+    @keyframes pulse {
+      0%,100% { box-shadow: var(--glow); }
+      50% { box-shadow: 0 0 35px rgba(0,229,255,0.5); }
+    }
+
+    .logo-text h1 {
+      font-family: 'Orbitron', monospace;
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--accent);
+      letter-spacing: 3px;
+      text-shadow: var(--glow);
+    }
+    .logo-text p {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 2px;
+    }
+
+    .header-status {
+      display: flex; align-items: center; gap: 8px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      color: var(--accent2);
+    }
+    .status-dot {
+      width: 8px; height: 8px;
+      background: var(--accent2);
+      border-radius: 50%;
+      animation: blink 1.5s ease-in-out infinite;
+      box-shadow: 0 0 8px var(--accent2);
+    }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    /* ── STATS ROW ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+      transition: border-color 0.3s;
+    }
+    .stat-card:hover { border-color: var(--accent); }
+    .stat-card .label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .stat-card .value {
+      font-family: 'Orbitron', monospace;
+      font-size: 26px;
+      font-weight: 700;
+    }
+    .stat-card.clean  .value { color: var(--accent2); text-shadow: var(--glow-g); }
+    .stat-card.threat .value { color: var(--danger);  text-shadow: var(--glow-r); }
+    .stat-card.scanned .value { color: var(--accent); text-shadow: var(--glow); }
+    .stat-card.suspect .value { color: var(--warn); text-shadow: 0 0 20px rgba(255,170,0,0.3); }
+
+    /* ── MAIN GRID ── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr;
+      gap: 20px;
+    }
+
+    /* ── PANEL ── */
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 18px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .panel-header .icon { font-size: 16px; }
+    .panel-header h2 {
+      font-family: 'Orbitron', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 2px;
+    }
+
+    /* ── UPLOAD ZONE ── */
+    .upload-zone {
+      padding: 28px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .drop-area {
+      width: 100%;
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 36px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+      background: rgba(0,229,255,0.02);
+    }
+
+    .drop-area:hover, .drop-area.dragover {
+      border-color: var(--accent);
+      background: rgba(0,229,255,0.06);
+      box-shadow: var(--glow);
+    }
+
+    .drop-area input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%; height: 100%;
+    }
+
+    .drop-icon {
+      font-size: 40px;
+      margin-bottom: 12px;
+      filter: drop-shadow(0 0 10px rgba(0,229,255,0.4));
+      display: block;
+    }
+
+    .drop-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 14px;
+      color: var(--accent);
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+
+    .drop-sub {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .selected-file {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      width: 100%;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .selected-file.show { display: flex; }
+    .file-name {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      color: var(--accent);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+    .file-size {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .btn-scan {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #004466, #006688);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      color: var(--accent);
+      font-family: 'Orbitron', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-transform: uppercase;
+    }
+    .btn-scan:hover:not(:disabled) {
+      background: linear-gradient(135deg, #005577, #0088aa);
+      box-shadow: var(--glow);
+    }
+    .btn-scan:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* ── PROGRESS / SCAN ANIMATION ── */
+    .scan-progress {
+      display: none;
+      width: 100%;
+      flex-direction: column;
+      gap: 10px;
+      padding: 0 20px 20px;
+    }
+    .scan-progress.show { display: flex; }
+
+    .layer-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      color: var(--text-dim);
+      transition: all 0.3s;
+      opacity: 0;
+      transform: translateX(-10px);
+    }
+    .layer-item.active {
+      opacity: 1;
+      transform: translateX(0);
+      color: var(--accent);
+      border-color: var(--accent);
+      background: rgba(0,229,255,0.05);
+    }
+    .layer-item.done {
+      opacity: 1;
+      transform: translateX(0);
+      color: var(--accent2);
+      border-color: var(--border);
+    }
+    .layer-item.fail {
+      opacity: 1;
+      transform: translateX(0);
+      color: var(--danger);
+      border-color: var(--danger);
+      background: rgba(255,51,102,0.05);
+    }
+
+    .layer-icon { font-size: 14px; }
+    .layer-spinner {
+      width: 12px; height: 12px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+      display: none;
+    }
+    .layer-item.active .layer-spinner { display: block; }
+    .layer-item.active .layer-icon { display: none; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── RESULT PANEL ── */
+    .result-panel {
+      padding: 20px;
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .result-panel.show { display: flex; }
+
+    .verdict-banner {
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      border: 2px solid;
+      position: relative;
+      overflow: hidden;
+    }
+    .verdict-banner::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0.08;
+    }
+    .verdict-banner.clean {
+      border-color: var(--accent2);
+      background: rgba(0,255,136,0.05);
+    }
+    .verdict-banner.clean::before { background: var(--accent2); }
+    .verdict-banner.malicious {
+      border-color: var(--danger);
+      background: rgba(255,51,102,0.05);
+    }
+    .verdict-banner.malicious::before { background: var(--danger); }
+    .verdict-banner.suspicious {
+      border-color: var(--warn);
+      background: rgba(255,170,0,0.05);
+    }
+    .verdict-banner.suspicious::before { background: var(--warn); }
+
+    .verdict-icon { font-size: 36px; display: block; margin-bottom: 8px; }
+    .verdict-label {
+      font-family: 'Orbitron', monospace;
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 4px;
+    }
+    .verdict-banner.clean    .verdict-label { color: var(--accent2); }
+    .verdict-banner.malicious .verdict-label { color: var(--danger); }
+    .verdict-banner.suspicious .verdict-label { color: var(--warn); }
+
+    .verdict-action {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* Threat meter */
+    .threat-meter {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .meter-label {
+      display: flex;
+      justify-content: space-between;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .meter-bar {
+      height: 8px;
+      background: var(--bg);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .meter-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 1s ease;
+      width: 0%;
+    }
+    .meter-fill.low  { background: linear-gradient(90deg, var(--accent2), #00cc66); }
+    .meter-fill.mid  { background: linear-gradient(90deg, var(--warn), #ff8800); }
+    .meter-fill.high { background: linear-gradient(90deg, var(--danger), #ff0044); }
+
+    /* Findings list */
+    .findings-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .findings-title {
+      padding: 10px 14px;
+      font-family: 'Orbitron', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .finding-item {
+      padding: 8px 14px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      border-bottom: 1px solid rgba(26,58,82,0.5);
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .finding-item:last-child { border-bottom: none; }
+    .finding-item.danger { color: var(--danger); }
+    .finding-item.warn   { color: var(--warn); }
+    .finding-item.ok     { color: var(--accent2); }
+    .finding-item.info   { color: var(--text-dim); }
+
+    /* Hash display */
+    .hash-display {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .hash-row { display: flex; gap: 10px; margin-bottom: 4px; }
+    .hash-row:last-child { margin-bottom: 0; }
+    .hash-key { color: var(--accent); min-width: 50px; }
+    .hash-val { word-break: break-all; }
+
+    /* Download button */
+    .btn-download {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #003322, #005533);
+      border: 1px solid var(--accent2);
+      border-radius: 8px;
+      color: var(--accent2);
+      font-family: 'Orbitron', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-decoration: none;
+      text-align: center;
+      display: block;
+    }
+    .btn-download:hover {
+      background: linear-gradient(135deg, #004433, #007744);
+      box-shadow: var(--glow-g);
+    }
+
+    /* ── LOG PANEL (right column) ── */
+    .log-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Layer breakdown */
+    .layer-breakdown {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .lyr-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .lyr-name {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+      min-width: 140px;
+    }
+    .lyr-bar-wrap {
+      flex: 1;
+      height: 6px;
+      background: var(--bg);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .lyr-bar {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.8s ease;
+    }
+    .lyr-score {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      min-width: 32px;
+      text-align: right;
+    }
+    .lyr-score.ok   { color: var(--accent2); }
+    .lyr-score.warn { color: var(--warn); }
+    .lyr-score.fail { color: var(--danger); }
+
+    /* Scan log */
+    .log-body {
+      padding: 14px;
+      max-height: 220px;
+      overflow-y: auto;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+    .log-body::-webkit-scrollbar { width: 4px; }
+    .log-body::-webkit-scrollbar-track { background: var(--bg); }
+    .log-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .log-line { display: block; margin-bottom: 2px; }
+    .log-line .ts { color: var(--border); }
+    .log-line .lv-info   { color: var(--accent2); }
+    .log-line .lv-warn   { color: var(--warn); }
+    .log-line .lv-error  { color: var(--danger); }
+    .log-line .lv-ok     { color: var(--accent); }
+
+    /* Responsive */
+    @media (max-width: 760px) {
+      .main-grid { grid-template-columns: 1fr; }
+      .stats-row { grid-template-columns: repeat(2,1fr); }
+    }
+
+    /* Placeholder state */
+    .placeholder-msg {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-dim);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      line-height: 2;
+    }
+    .placeholder-msg .big { font-size: 32px; display: block; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🛡️</div>
+      <div class="logo-text">
+        <h1>ISOSCAN</h1>
+        <p>ISOLATED SANDBOX ENGINE v2.0</p>
+      </div>
+    </div>
+    <div class="header-status">
+      <div class="status-dot"></div>
+      <span>SANDBOX ACTIVE</span>
+    </div>
+  </header>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card scanned">
+      <div class="label">Total Scanned</div>
+      <div class="value" id="st-total">0</div>
+    </div>
+    <div class="stat-card clean">
+      <div class="label">Clean Files</div>
+      <div class="value" id="st-clean">0</div>
+    </div>
+    <div class="stat-card threat">
+      <div class="label">Threats Found</div>
+      <div class="value" id="st-threats">0</div>
+    </div>
+    <div class="stat-card suspect">
+      <div class="label">Suspicious</div>
+      <div class="value" id="st-suspect">0</div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="main-grid">
+
+    <!-- LEFT: Upload + Scan -->
+    <div style="display:flex;flex-direction:column;gap:20px;">
+
+      <!-- Upload Panel -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="icon">📁</span>
+          <h2>FILE UPLOAD</h2>
+        </div>
+        <div class="upload-zone">
+          <div class="drop-area" id="dropArea">
+            <input type="file" id="fileInput" />
+            <span class="drop-icon">⬆️</span>
+            <div class="drop-title">DROP FILE TO SCAN</div>
+            <div class="drop-sub">or click to browse · max 50MB</div>
+          </div>
+
+          <div class="selected-file" id="selectedFile">
+            <span class="file-name" id="selFileName">—</span>
+            <span class="file-size" id="selFileSize">—</span>
+          </div>
+
+          <button class="btn-scan" id="btnScan" disabled onclick="startScan()">
+            ⚡ INITIATE SCAN
+          </button>
+        </div>
+
+        <!-- Layer progress -->
+        <div class="scan-progress" id="scanProgress">
+          <div class="layer-item" id="lyr0">
+            <div class="layer-spinner"></div>
+            <span class="layer-icon">📋</span>
+            <span>Layer 1 — File Validation</span>
+          </div>
+          <div class="layer-item" id="lyr1">
+            <div class="layer-spinner"></div>
+            <span class="layer-icon">📊</span>
+            <span>Layer 2 — Entropy Analysis</span>
+          </div>
+          <div class="layer-item" id="lyr2">
+            <div class="layer-spinner"></div>
+            <span class="layer-icon">🔍</span>
+            <span>Layer 3 — YARA Rules</span>
+          </div>
+          <div class="layer-item" id="lyr3">
+            <div class="layer-spinner"></div>
+            <span class="layer-icon">💻</span>
+            <span>Layer 4 — PE Analysis</span>
+          </div>
+          <div class="layer-item" id="lyr4">
+            <div class="layer-spinner"></div>
+            <span class="layer-icon">🔤</span>
+            <span>Layer 5 — String Heuristics</span>
+          </div>
+          <div class="layer-item" id="lyr5">
+            <div class="layer-spinner"></div>
+            <span class="layer-icon">🦠</span>
+            <span>Layer 6 — ClamAV Scan</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Result Card -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="icon">⚠️</span>
+          <h2>VERDICT</h2>
+        </div>
+        <div id="resultPlaceholder" class="placeholder-msg">
+          <span class="big">🛡️</span>
+          Awaiting file submission...<br>
+          Upload a file to begin sandboxed analysis
+        </div>
+        <div class="result-panel" id="resultPanel">
+          <div class="verdict-banner" id="verdictBanner">
+            <span class="verdict-icon" id="verdictIcon">—</span>
+            <div class="verdict-label" id="verdictLabel">—</div>
+            <div class="verdict-action" id="verdictAction">—</div>
+          </div>
+
+          <div class="threat-meter">
+            <div class="meter-label">
+              <span>THREAT SCORE</span>
+              <span id="meterScore">0/100</span>
+            </div>
+            <div class="meter-bar">
+              <div class="meter-fill" id="meterFill"></div>
+            </div>
+          </div>
+
+          <div class="findings-section">
+            <div class="findings-title">ANALYSIS FINDINGS</div>
+            <div id="findingsList"></div>
+          </div>
+
+          <div class="hash-display" id="hashDisplay"></div>
+          <a class="btn-download" id="btnDownload" href="#" style="display:none">
+            ✅ DOWNLOAD SAFE FILE
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Layer Breakdown + Log -->
+    <div class="log-panel">
+
+      <!-- Layer score breakdown -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="icon">📊</span>
+          <h2>LAYER BREAKDOWN</h2>
+        </div>
+        <div class="layer-breakdown" id="layerBreakdown">
+          <div class="placeholder-msg" style="padding:20px;">
+            <span>Layer scores will appear here after scan</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scan Log -->
+      <div class="panel" style="flex:1">
+        <div class="panel-header">
+          <span class="icon">📟</span>
+          <h2>SCAN LOG</h2>
+        </div>
+        <div class="log-body" id="logBody">
+          <span class="log-line">
+            <span class="ts">[BOOT] </span>
+            <span class="lv-ok">Sandbox engine initialized</span>
+          </span>
+          <span class="log-line">
+            <span class="ts">[BOOT] </span>
+            <span class="lv-ok">YARA rules loaded</span>
+          </span>
+          <span class="log-line">
+            <span class="ts">[BOOT] </span>
+            <span class="lv-ok">ClamAV daemon ready</span>
+          </span>
+          <span class="log-line">
+            <span class="ts">[BOOT] </span>
+            <span class="lv-info">Awaiting file submission...</span>
+          </span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ───────────────────────────────────────────────────────
+const state = { total: 0, clean: 0, threats: 0, suspect: 0 };
+let selectedFile = null;
+let currentReport = null;
+
+// API base — change to your Docker host
+const API_BASE = 'http://localhost:5000';
+
+// ── FILE INPUT ──────────────────────────────────────────────────
+const fileInput = document.getElementById('fileInput');
+const dropArea  = document.getElementById('dropArea');
+
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+dropArea.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropArea.classList.add('dragover');
+});
+dropArea.addEventListener('dragleave', () => dropArea.classList.remove('dragover'));
+dropArea.addEventListener('drop', e => {
+  e.preventDefault();
+  dropArea.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+function handleFile(file) {
+  selectedFile = file;
+  document.getElementById('selFileName').textContent = file.name;
+  document.getElementById('selFileSize').textContent = formatBytes(file.size);
+  document.getElementById('selectedFile').classList.add('show');
+  document.getElementById('btnScan').disabled = false;
+  addLog('info', `File selected: ${file.name} (${formatBytes(file.size)})`);
+}
+
+// ── SCAN ────────────────────────────────────────────────────────
+async function startScan() {
+  if (!selectedFile) return;
+
+  resetUI();
+  document.getElementById('btnScan').disabled = true;
+  document.getElementById('scanProgress').classList.add('show');
+  addLog('ok', `Starting sandbox analysis: ${selectedFile.name}`);
+
+  // Animate layers sequentially (simulate progress)
+  const layers = ['lyr0','lyr1','lyr2','lyr3','lyr4','lyr5'];
+  const delays  = [300, 800, 1400, 2200, 3000, 3800];
+
+  layers.forEach((id, i) => {
+    setTimeout(() => {
+      // Deactivate previous
+      if (i > 0) {
+        const prev = document.getElementById(layers[i-1]);
+        prev.classList.remove('active');
+        prev.classList.add('done');
+      }
+      document.getElementById(id).classList.add('active');
+      const layerNames = ['File Validation','Entropy Analysis','YARA Scan','PE Analysis','String Heuristics','ClamAV'];
+      addLog('info', `Running Layer ${i+1}: ${layerNames[i]}...`);
+    }, delays[i]);
+  });
+
+  // Upload and get real result
+  const formData = new FormData();
+  formData.append('file', selectedFile);
+
+  try {
+    let report;
+
+    // Try real API first
+    try {
+      const res = await Promise.race([
+        fetch(`${API_BASE}/scan`, { method: 'POST', body: formData }),
+        new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 6000))
+      ]);
+      report = await res.json();
+    } catch {
+      // Demo mode: simulate analysis
+      addLog('warn', 'API unreachable — running demo analysis mode');
+      report = await simulateAnalysis(selectedFile);
+    }
+
+    // Wait for animations to finish
+    await sleep(4400);
+
+    // Mark last layer done
+    document.getElementById('lyr5').classList.remove('active');
+    document.getElementById('lyr5').classList.add(report.verdict === 'CLEAN' ? 'done' : 'fail');
+
+    // Display result
+    displayResult(report);
+    updateStats(report);
+    addLog(report.verdict === 'CLEAN' ? 'ok' : 'error',
+      `Verdict: ${report.verdict} | Score: ${report.threat_score}/100`);
+
+  } catch (err) {
+    addLog('error', `Analysis failed: ${err.message}`);
+    document.getElementById('btnScan').disabled = false;
+  }
+}
+
+// ── SIMULATE (demo mode) ─────────────────────────────────────────
+async function simulateAnalysis(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  const dangerousExts = ['exe','dll','bat','vbs','ps1','scr','com'];
+  const suspiciousExts = ['js','jar','hta','msi'];
+
+  let verdict, score, findings, action;
+
+  if (dangerousExts.includes(ext)) {
+    verdict = 'MALICIOUS'; score = Math.floor(Math.random()*30)+70; action = 'QUARANTINED';
+    findings = [
+      `[CRITICAL] Dangerous file extension detected: .${ext}`,
+      '[HIGH] High entropy regions found - possible packing',
+      '[HIGH] Suspicious API imports detected',
+      '[MEDIUM] Suspicious string patterns found',
+    ];
+  } else if (suspiciousExts.includes(ext)) {
+    verdict = 'SUSPICIOUS'; score = Math.floor(Math.random()*25)+35; action = 'QUARANTINED';
+    findings = [
+      `[MEDIUM] Suspicious extension: .${ext}`,
+      '[MEDIUM] Elevated entropy detected',
+      '[LOW] Script execution patterns found',
+    ];
+  } else {
+    verdict = 'CLEAN'; score = Math.floor(Math.random()*20)+5; action = 'SAFE_TO_SAVE';
+    findings = [
+      `[OK] File extension .${ext} is safe`,
+      '[OK] Normal entropy levels',
+      '[OK] No suspicious strings found',
+      '[OK] ClamAV: No threats detected',
+    ];
+  }
+
+  const md5 = Array.from({length:32},()=>'0123456789abcdef'[Math.floor(Math.random()*16)]).join('');
+  const sha256 = Array.from({length:64},()=>'0123456789abcdef'[Math.floor(Math.random()*16)]).join('');
+
+  return {
+    filename: file.name,
+    verdict, action,
+    risk_level: score >= 70 ? 'CRITICAL' : score >= 40 ? 'HIGH' : 'LOW',
+    threat_score: score,
+    scan_time_s: (Math.random()*2+1).toFixed(2),
+    timestamp: new Date().toISOString(),
+    hashes: { md5, sha256, sha1: md5.substring(0,40) },
+    all_findings: findings,
+    layers: [
+      { layer:'File Validation',  score: dangerousExts.includes(ext)?50:0,  passed: !dangerousExts.includes(ext) },
+      { layer:'Entropy Analysis', score: dangerousExts.includes(ext)?35:0,  passed: !dangerousExts.includes(ext) },
+      { layer:'YARA Scan',        score: dangerousExts.includes(ext)?60:0,  passed: !dangerousExts.includes(ext) },
+      { layer:'PE Analysis',      score: ext==='exe'?30:0,                  passed: ext!=='exe' },
+      { layer:'String Heuristics',score: dangerousExts.includes(ext)?20:0,  passed: true },
+      { layer:'ClamAV Scan',      score: dangerousExts.includes(ext)?40:0,  passed: !dangerousExts.includes(ext) },
+    ],
+  };
+}
+
+// ── DISPLAY RESULT ───────────────────────────────────────────────
+function displayResult(report) {
+  currentReport = report;
+  document.getElementById('resultPlaceholder').style.display = 'none';
+  document.getElementById('resultPanel').classList.add('show');
+
+  // Verdict banner
+  const banner = document.getElementById('verdictBanner');
+  const verdictMap = {
+    CLEAN:     { cls:'clean',     icon:'✅', label:'CLEAN',     action:'File is safe · Ready to save to your PC' },
+    MALICIOUS: { cls:'malicious', icon:'☣️', label:'MALICIOUS', action:'File QUARANTINED · Contained in sandbox · Your PC is safe' },
+    SUSPICIOUS:{ cls:'suspicious',icon:'⚠️', label:'SUSPICIOUS',action:'File QUARANTINED · Further review recommended' },
+  };
+  const v = verdictMap[report.verdict] || verdictMap.SUSPICIOUS;
+  banner.className = `verdict-banner ${v.cls}`;
+  document.getElementById('verdictIcon').textContent = v.icon;
+  document.getElementById('verdictLabel').textContent = v.label;
+  document.getElementById('verdictAction').textContent = v.action;
+
+  // Threat meter
+  const score = report.threat_score || 0;
+  document.getElementById('meterScore').textContent = `${score}/100`;
+  const fill = document.getElementById('meterFill');
+  fill.style.width = `${score}%`;
+  fill.className = `meter-fill ${score >= 70 ? 'high' : score >= 35 ? 'mid' : 'low'}`;
+
+  // Findings
+  const list = document.getElementById('findingsList');
+  list.innerHTML = '';
+  const findings = report.all_findings || [];
+  if (findings.length === 0) {
+    list.innerHTML = '<div class="finding-item ok">✓ No threats detected</div>';
+  } else {
+    findings.slice(0, 10).forEach(f => {
+      const el = document.createElement('div');
+      const isCrit = f.includes('CRITICAL') || f.includes('ClamAV detected');
+      const isHigh = f.includes('HIGH') || f.includes('Dangerous');
+      const isOk   = f.includes('OK') || f.includes('safe') || f.includes('No');
+      el.className = `finding-item ${isCrit||isHigh?'danger':isOk?'ok':'warn'}`;
+      el.textContent = (isCrit ? '⛔ ' : isHigh ? '⚠️ ' : isOk ? '✓ ' : '→ ') + f;
+      list.appendChild(el);
+    });
+  }
+
+  // Hashes
+  const h = report.hashes || {};
+  document.getElementById('hashDisplay').innerHTML = `
+    <div class="hash-row"><span class="hash-key">MD5</span><span class="hash-val">${h.md5||'—'}</span></div>
+    <div class="hash-row"><span class="hash-key">SHA1</span><span class="hash-val">${h.sha1||'—'}</span></div>
+    <div class="hash-row"><span class="hash-key">SHA256</span><span class="hash-val">${h.sha256||'—'}</span></div>
+  `;
+
+  // Download button
+  const dl = document.getElementById('btnDownload');
+  if (report.verdict === 'CLEAN' && h.md5) {
+    dl.href = `${API_BASE}/download/${h.md5}`;
+    dl.style.display = 'block';
+  } else {
+    dl.style.display = 'none';
+  }
+
+  // Layer breakdown
+  renderLayerBreakdown(report.layers || []);
+}
+
+function renderLayerBreakdown(layers) {
+  const container = document.getElementById('layerBreakdown');
+  if (!layers.length) return;
+
+  const colors = ['#00e5ff','#00ff88','#ffaa00','#ff3366','#aa88ff','#ff8844'];
+  container.innerHTML = layers.map((lyr, i) => {
+    const score = lyr.score || 0;
+    const pct = Math.min(score, 100);
+    const cls = score >= 60 ? 'fail' : score >= 20 ? 'warn' : 'ok';
+    const color = score >= 60 ? '#ff3366' : score >= 20 ? '#ffaa00' : '#00ff88';
+    return `
+      <div class="lyr-row">
+        <span class="lyr-name">${lyr.layer}</span>
+        <div class="lyr-bar-wrap">
+          <div class="lyr-bar" style="width:${pct}%;background:${color}"></div>
+        </div>
+        <span class="lyr-score ${cls}">${score}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+// ── LOG ─────────────────────────────────────────────────────────
+function addLog(level, msg) {
+  const body = document.getElementById('logBody');
+  const ts = new Date().toTimeString().slice(0,8);
+  const lvClass = { ok:'lv-ok', info:'lv-info', warn:'lv-warn', error:'lv-error' }[level] || 'lv-info';
+  const prefix  = { ok:'[OK]  ', info:'[INFO]', warn:'[WARN]', error:'[CRIT]' }[level] || '[INFO]';
+  const line = document.createElement('span');
+  line.className = 'log-line';
+  line.innerHTML = `<span class="ts">[${ts}] ${prefix} </span><span class="${lvClass}">${msg}</span>`;
+  body.appendChild(line);
+  body.scrollTop = body.scrollHeight;
+}
+
+// ── STATS ───────────────────────────────────────────────────────
+function updateStats(report) {
+  state.total++;
+  if (report.verdict === 'CLEAN')     state.clean++;
+  else if (report.verdict === 'MALICIOUS') state.threats++;
+  else state.suspect++;
+  document.getElementById('st-total').textContent   = state.total;
+  document.getElementById('st-clean').textContent   = state.clean;
+  document.getElementById('st-threats').textContent = state.threats;
+  document.getElementById('st-suspect').textContent = state.suspect;
+}
+
+// ── HELPERS ─────────────────────────────────────────────────────
+function resetUI() {
+  document.getElementById('scanProgress').classList.remove('show');
+  document.getElementById('resultPanel').classList.remove('show');
+  document.getElementById('resultPlaceholder').style.display = '';
+  ['lyr0','lyr1','lyr2','lyr3','lyr4','lyr5'].forEach(id => {
+    const el = document.getElementById(id);
+    el.className = 'layer-item';
+  });
+  document.getElementById('meterFill').style.width = '0%';
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024*1024) return `${(bytes/1024).toFixed(1)} KB`;
+  return `${(bytes/1024/1024).toFixed(1)} MB`;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>

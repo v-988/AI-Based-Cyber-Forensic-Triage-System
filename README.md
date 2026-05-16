@@ -32,7 +32,7 @@ The file **never executes**. It is only read byte-by-byte and pattern-matched. E
 
 <p align="center">
 
-  <img src="https://github.com/user-attachments/assets/910567aa-74c8-4f1b-a7af-41d86cbf6cae" width="800">
+  <img src="https://github.com/user-attachments/assets/910567aa-74c8-4f1b-a7af-41d86cbf6cae" width="600">
 </p>
 
 

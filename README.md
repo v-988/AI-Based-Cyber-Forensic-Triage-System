@@ -266,7 +266,7 @@ isoscan/
 ---
 <h2 align="center">📊 Dashboard Preview</h2>
 <p align="center">
-  <img width="700" alt="ISOSCAN Dashboard" src="https://github.com/user-attachments/assets/4bdfcc16-3fa6-46b9-a02f-981ad4fcf567" />
+  <img width="700" alt="Dashboard" src="https://github.com/user-attachments/assets/4bdfcc16-3fa6-46b9-a02f-981ad4fcf567" />
 </p>
 ---
 

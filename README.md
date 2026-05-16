@@ -28,8 +28,7 @@ The file **never executes**. It is only read byte-by-byte and pattern-matched. E
 ---
 
 ## 🏗️ System Architecture
-
-![Architecture](https://raw.githubusercontent.com/v-988/Cyber-Quad/main/1778945737858_forensic_architecture.png)
+![Architecture](assets/forensic_architecture.png)
 
 > The full end-to-end pipeline from file ingestion to verdict output.
 

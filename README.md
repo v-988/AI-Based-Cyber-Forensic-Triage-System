@@ -27,12 +27,9 @@ The file **never executes**. It is only read byte-by-byte and pattern-matched. E
 
 ---
 
-<h2 align="center">🏗️ System Architecture</h2>
+🏗️ System Architecture
 
-<p align="center">
-
-  <img src="https://github.com/user-attachments/assets/910567aa-74c8-4f1b-a7af-41d86cbf6cae" width="400">
-</p>
+<img src="https://github.com/user-attachments/assets/910567aa-74c8-4f1b-a7af-41d86cbf6cae" width="400">
 
 
 > The full end-to-end pipeline from file ingestion to verdict output.

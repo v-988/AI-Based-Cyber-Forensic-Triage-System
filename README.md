@@ -31,7 +31,9 @@ The file **never executes**. It is only read byte-by-byte and pattern-matched. E
 <h2 align="center">🏗️ System Architecture</h2>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/v-988/Cyber-Forensic-Triage-System/main/images/architecture.png" width="850">
+
+  <img src="https://github.com/user-attachments/assets/910567aa-74c8-4f1b-a7af-41d86cbf6cae" width="850">
+" width="800">
 </p>
 
 

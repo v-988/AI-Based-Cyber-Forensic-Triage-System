@@ -28,7 +28,7 @@ The file **never executes**. It is only read byte-by-byte and pattern-matched. E
 ---
 
 ## 🏗️ System Architecture
-<img src="images/width="432" height="621" alt="forensic architecture" src="https://github.com/user-attachments/assets/9d134cf9-778e-4eed-b185-101c4aded34a" />
+https://github.com/your-username/Cyber-Forensic-Triage-System/blob/main/images/architecture.png
 
 
 > The full end-to-end pipeline from file ingestion to verdict output.

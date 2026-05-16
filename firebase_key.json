@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "forensic-triage",
+  "private_key_id": "38b8ba306777f49d7ce02cd607351cb45602ca54",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCqzmwy6vyx1RB3\nSv3PhbRA0az60CKJu0zlo8OW+MqM5RnpYHEx4SjSHcjoPT3djBaClUdjbPQoqw10\ns2JKEtAihMvibyxwmO2IOHTkhlxlucJXPobq4cFP3aVWaacJ0Rreq5dPApUwsVO5\nzg689dhLAfLsEohOXWcNV1m+1I7WCUzGdII9GGWmQOXfpkCH8GP4P0/pTZ0mN/d1\n1eECsg1nZFO0OqIISY2wwHpvdge33vxvOaIUcx6mhrlwRgh1TZs3N72eD4OIuOit\nDRgj+8VGR1IH8GBBo/rDPA0L/GD7G41wQlkOIpSZt4Y1aTHBVNdzQM9Jge371Ywc\nSjseStmHAgMBAAECggEAD538bkgRCbt28XQAXUCW2L8Icg2kvXN21kpRFaqIGTYm\nATIfDMCkXa3OfaQtK2a7H35sVA7AC5Xe5EGLO5ruaobk02kh0ZESACdVUhhni1Te\n4YuR2hkBIVRyi8JGPRNgQbrDr2bc4uJbyucobtDgUV9gvtf6RtwAZ6EJz3UaMunp\nei8G1QXqSmLa9gam+V3JNc9m8PN//UxcPqr9XlI9CbJYIDp++zYmGI3ziPr+4tu4\nWBl46SNJnRIx11hwgmU32vxyndSQ6oB/DZ7Rw99PPq3HLC4lwOa/KKP3ZJrOOyXN\n+VN47pln4PR3mgY4IPpFSIB6moE40xqizbgDqVyJHQKBgQDcTGNnclekfCLE3qvI\nwzoaYRXd5Pj0NQiYsmsDi381oEd1XYbZYbks/8IkG4gwxdBc4e6ztzQ5UdBSuIld\nMuSu6ebIfyuo5WTuIl/nzj8QrIT8Qz0amE8Z0dfOepIaEVLjA4+sXqGgV9A4SO6d\nGUEkVwQ45EB0A2hHADnA8YUYuwKBgQDGfLyezzFQlcsauLkIA0g+09Kt+h2M7pQJ\nYZ90cpvGdOQu8+w7h5AzZ245NVMBRLL7abLRQiiG6clS69isMS7YbWbvDnLHUUMQ\nuyS5Vmyz45qYY4ALKkveabMjGC6FvuVn1gofnO0oIrONBJ4XOrKSwf0RpoWRroL2\ncUSPnqerpQKBgQCcZOaVBAnQTgho9yPBTUesfowFkY5j4FqP/OoYBCp1KapRWepn\n3QaXOaLb+2e+KFD5/7N0hnVe1AQvFa7/KShMPOWIJTAboW772A96A2OmNLPcWufA\nP6y4Sc8JWN7r/qx3WYnf9vaLXIwHyU8M3Gbwo43tza0sL1cSQMi/fzbcDQKBgQCj\nY3LxV6VErMnwSTcnPWxvK3c197nzlUEPJ+lWtjE9AGQFso03w7QUXIQDW73kQWUE\nSFIGp+ssg65SMArAVAw35HbjOoWJRX9remIUnuwEeMt9vgpdJogloeTwcqt5NVcq\nTqsussMWUtpyruZkQNFWtZFYwjcZYQo1S7AgeX2UcQKBgG43+WF/HPKb+TbWJ13j\ns8qdIjtBpqtcPwm8kA9aoOjK/Oq0uViwMrMMrZGUbKawC/abbzgTxK26weWJv7mk\ntkuOPDeM1BGbf4LKp3ni5ytRZuzaKF37nc3t5fThklJcV9LFINi6NX0vemsXCs+3\nwj/azCcZDhbIUSOdq61rKtaY\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-fbsvc@forensic-triage.iam.gserviceaccount.com",
+  "client_id": "111916564173369049525",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40forensic-triage.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

@@ -264,11 +264,10 @@ isoscan/
 | Sidebar stats | Live counters: total scanned, clean, threats, suspicious |
 
 ---
-## 📊 Dashboard Preview
+<h2 align="center">📊 Dashboard Preview</h2>
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/eacb82ef-b866-4485-b9dc-5f099f28a8d1" width="700">
+  <img width="700" alt="ISOSCAN Dashboard" src="https://github.com/user-attachments/assets/4bdfcc16-3fa6-46b9-a02f-981ad4fcf567" />
 </p>
-
 ---
 
 ## 📊 Scoring Reference

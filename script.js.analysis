@@ -1,0 +1,546 @@
+// ==================== DATE & TIME FUNCTIONALITY ====================
+function updateDateTime() {
+    const now = new Date();
+    
+    // Format date
+    const dateOptions = { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    };
+    const dateStr = now.toLocaleDateString('en-US', dateOptions);
+    
+    // Format time
+    const timeOptions = { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit',
+        hour12: true 
+    };
+    const timeStr = now.toLocaleTimeString('en-US', timeOptions);
+    
+    document.getElementById('currentDate').textContent = dateStr;
+    document.getElementById('currentTime').textContent = timeStr;
+}
+
+// Update time immediately and then every second
+updateDateTime();
+setInterval(updateDateTime, 1000);
+
+// ==================== WEATHER FUNCTIONALITY ====================
+async function updateWeather() {
+
+    const tempEl = document.getElementById("weatherTemp");
+    const locEl = document.getElementById("weatherLocation");
+    const iconEl = document.getElementById("weatherIcon");
+
+    locEl.textContent = "Fetching...";
+    tempEl.textContent = "--°C";
+
+    if (!navigator.geolocation) {
+        setFallbackWeather();
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(async (position) => {
+
+        const lat = 13.0827; 
+        const lon = 80.2707;
+
+        const API_KEY = "a776032d0d05a8e7f3040e926f9b9b8e"; // ← add your key
+        try {
+            const res = await fetch(
+                `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}`
+            );
+
+            if (!res.ok) throw new Error("API error");
+
+            const data = await res.json();
+
+            const temp = Math.round(data.main.temp) + "°C";
+            const location = data.name + ", " + data.sys.country;
+            const condition = data.weather[0].main;
+
+            const iconMap = {
+                Clear: "☀️",
+                Clouds: "☁️",
+                Rain: "🌧️",
+                Thunderstorm: "⛈️",
+                Drizzle: "🌦️",
+                Snow: "❄️",
+                Mist: "🌫️",
+                Smoke: "🌫️",
+                Haze: "🌫️",
+                Fog: "🌫️"
+            };
+
+            tempEl.textContent = temp;
+            locEl.textContent = location;
+            iconEl.textContent = iconMap[condition] || "🌡️";
+
+        } catch (err) {
+            console.error(err);
+            setFallbackWeather();
+        }
+
+    }, setFallbackWeather);
+}
+
+
+/* ==================== FALLBACK ==================== */
+
+function setFallbackWeather() {
+    document.getElementById("weatherTemp").textContent = "28°C";
+    document.getElementById("weatherLocation").textContent = "Tamil Nadu";
+    document.getElementById("weatherIcon").textContent = "☀️";
+}
+
+
+/* ==================== BUTTON CLICK ==================== */
+
+document.getElementById("getWeatherBtn")
+    .addEventListener("click", updateWeather);
+// ==================== MODAL FUNCTIONALITY ====================
+const languageBtn = document.getElementById('languageBtn');
+const notificationBtn = document.getElementById('notificationBtn');
+const helpBtn = document.getElementById('helpBtn');
+
+const languageModal = document.getElementById('languageModal');
+const notificationModal = document.getElementById('notificationModal');
+const helpModal = document.getElementById('helpModal');
+
+// Open modal function
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+// Close modal function
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// Event listeners for opening modals
+languageBtn.addEventListener('click', () => openModal('languageModal'));
+notificationBtn.addEventListener('click', () => {
+    openModal('notificationModal');
+    // Clear notification badge
+    const badge = document.querySelector('.notification-badge');
+    if (badge) {
+        setTimeout(() => {
+            badge.style.display = 'none';
+        }, 300);
+    }
+});
+helpBtn.addEventListener('click', () => openModal('helpModal'));
+
+// Close modal when clicking outside
+window.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal')) {
+        closeModal(e.target.id);
+    }
+});
+
+// Close modal with Escape key
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const activeModal = document.querySelector('.modal.active');
+        if (activeModal) {
+            closeModal(activeModal.id);
+        }
+    }
+});
+
+// ==================== LANGUAGE SELECTION ====================
+const languageOptions = document.querySelectorAll('.language-option');
+
+languageOptions.forEach(option => {
+    option.addEventListener('click', function() {
+        // Remove active class from all options
+        languageOptions.forEach(opt => opt.classList.remove('active'));
+        
+        // Add active class to clicked option
+        this.classList.add('active');
+        
+        // In a real app, you would change the language here
+        const selectedLanguage = this.textContent;
+        console.log('Selected language:', selectedLanguage);
+        
+        // Close modal after selection
+        setTimeout(() => {
+            closeModal('languageModal');
+        }, 500);
+    });
+});
+
+// ==================== NAVIGATION FUNCTIONALITY ====================
+const navButtons = document.querySelectorAll('.nav-btn');
+
+navButtons.forEach(button => {
+    button.addEventListener('click', function() {
+        // Remove active class from all buttons
+        navButtons.forEach(btn => btn.classList.remove('active'));
+        
+        // Add active class to clicked button
+        this.classList.add('active');
+        
+        // Get the page data
+        const page = this.dataset.page;
+        console.log('Navigating to:', page);
+        
+        // In a real app, you would navigate to different pages here
+        // For now, we'll just log and show an alert
+        if (page === 'predict') {
+            showNotification('Prediction feature coming soon!', 'info');
+        } else if (page === 'contact') {
+            showNotification('Contact page will open shortly', 'info');
+        }
+    });
+});
+
+// ==================== NOTIFICATION SYSTEM ====================
+/*function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = `custom-notification ${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <span class="notification-icon">${type === 'success' ? '✓' : 'ℹ'}</span>
+            <span class="notification-message">${message}</span>
+        </div>
+    `;*/
+    
+    // Add styles
+    Object.assign(notification.style, {
+        position: 'fixed',
+        top: '100px',
+        right: '20px',
+        background: type === 'success' ? '#4CAF50' : '#2196F3',
+        color: 'white',
+        padding: '1rem 1.5rem',
+        borderRadius: '12px',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+        zIndex: '10000',
+        animation: 'slideInRight 0.3s ease',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.75rem',
+        minWidth: '300px'
+    });
+    
+    document.body.appendChild(notification);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
+
+
+// ==================== STOCK PRICE ANIMATION ====================
+function animateStockPrices() {
+    const stockItems = document.querySelectorAll('.stock-item');
+    
+    stockItems.forEach((item, index) => {
+        setTimeout(() => {
+            item.style.animation = 'none';
+            setTimeout(() => {
+                item.style.animation = 'fadeInLeft 0.5s ease both';
+            }, 10);
+        }, index * 100);
+    });
+}
+
+// Animate on load
+window.addEventListener('load', () => {
+    setTimeout(animateStockPrices, 500);
+});
+
+// Simulate stock price updates every 30 seconds
+setInterval(() => {
+    const stockPrices = document.querySelectorAll('.stock-price');
+    const stockTrends = document.querySelectorAll('.stock-trend');
+    
+    stockPrices.forEach((price, index) => {
+        // Simulate price change
+        const change = (Math.random() - 0.5) * 100;
+        const currentPrice = parseInt(price.textContent.replace(/[^0-9]/g, ''));
+        const newPrice = Math.max(1000, currentPrice + Math.round(change));
+        
+        // Animate price change
+        price.style.transition = 'all 0.3s ease';
+        price.style.transform = 'scale(1.1)';
+        
+        setTimeout(() => {
+            price.textContent = `₹${newPrice.toLocaleString()}/quintal`;
+            price.style.transform = 'scale(1)';
+        }, 150);
+        
+        // Update trend
+        const trendElement = stockTrends[index];
+        const trendChange = (Math.random() * 5).toFixed(1);
+        const isUp = Math.random() > 0.5;
+        
+        trendElement.classList.remove('up', 'down');
+        trendElement.classList.add(isUp ? 'up' : 'down');
+        trendElement.textContent = `${isUp ? '↑' : '↓'} ${trendChange}%`;
+    });
+}, 30000);
+
+// ==================== SCROLL ANIMATIONS ====================
+const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -100px 0px'
+};
+
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+        }
+    });
+}, observerOptions);
+
+// Observe timeline items
+const timelineItems = document.querySelectorAll('.timeline-item');
+timelineItems.forEach(item => {
+    item.style.opacity = '0';
+    item.style.transform = 'translateY(30px)';
+    item.style.transition = 'all 0.6s ease';
+    observer.observe(item);
+});
+
+// ==================== SMOOTH SCROLLING ====================
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    });
+});
+
+// ==================== CTA BUTTON RIPPLE EFFECT ====================
+const ctaBtn = document.querySelector('.cta-btn');
+
+ctaBtn.addEventListener('click', function(e) {
+    const ripple = document.createElement('span');
+    ripple.className = 'ripple';
+    
+    const rect = this.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const x = e.clientX - rect.left - size / 2;
+    const y = e.clientY - rect.top - size / 2;
+    
+    ripple.style.width = ripple.style.height = size + 'px';
+    ripple.style.left = x + 'px';
+    ripple.style.top = y + 'px';
+    
+    this.appendChild(ripple);
+    
+    setTimeout(() => {
+        ripple.remove();
+    }, 600);
+    
+    // Show success notification
+    showNotification('Welcome to AgroConnect! Let\'s get started.', 'success');
+});
+
+// ==================== SCHEME CARDS HOVER EFFECT ====================
+const schemeItems = document.querySelectorAll('.scheme-item');
+
+schemeItems.forEach(item => {
+    item.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateX(10px) scale(1.02)';
+    });
+    
+    item.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateX(0) scale(1)';
+    });
+});
+
+// ==================== VIEW ALL BUTTON ====================
+const viewAllBtn = document.querySelector('.view-all-btn');
+
+if (viewAllBtn) {
+    viewAllBtn.addEventListener('click', function() {
+        showNotification('Loading all market data...', 'info');
+    });
+}
+
+// ==================== FLOATING CARDS ANIMATION ====================
+const floatingCards = document.querySelectorAll('.floating-card');
+
+floatingCards.forEach((card, index) => {
+    // Add parallax effect on mouse move
+    document.addEventListener('mousemove', (e) => {
+        const xAxis = (window.innerWidth / 2 - e.pageX) / 50;
+        const yAxis = (window.innerHeight / 2 - e.pageY) / 50;
+        
+        card.style.transform = `translateX(${xAxis * (index + 1)}px) translateY(${yAxis * (index + 1)}px)`;
+    });
+});
+
+// ==================== LOADING ANIMATION ====================
+window.addEventListener('load', () => {
+    // Remove any loading states
+    document.body.classList.add('loaded');
+    
+    // Trigger entrance animations
+    setTimeout(() => {
+        const elements = document.querySelectorAll('.hero-section, .info-section, .cultivation-section');
+        elements.forEach((el, index) => {
+            setTimeout(() => {
+                el.style.opacity = '1';
+                el.style.transform = 'translateY(0)';
+            }, index * 200);
+        });
+    }, 100);
+});
+
+// ==================== NOTIFICATION ITEMS CLICK ====================
+const notificationItems = document.querySelectorAll('.notification-item');
+
+notificationItems.forEach(item => {
+    item.addEventListener('click', function() {
+        this.classList.remove('unread');
+        const title = this.querySelector('h4').textContent;
+        showNotification(`Opened: ${title}`, 'info');
+    });
+});
+
+// ==================== HELP LINKS ====================
+const helpLinks = document.querySelectorAll('.help-link');
+
+helpLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        showNotification('Opening resource...', 'info');
+    });
+});
+
+// ==================== CONSOLE WELCOME MESSAGE ====================
+console.log('%c🌾 Welcome to AgroConnect! ', 'background: #2E7D32; color: white; font-size: 20px; padding: 10px;');
+console.log('%cEmpowering farmers with technology', 'color: #81C784; font-size: 14px;');
+
+// ==================== ADD ANIMATION KEYFRAMES DYNAMICALLY ====================
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+    
+    .ripple {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(0);
+        animation: ripple-animation 0.6s ease-out;
+        pointer-events: none;
+    }
+    
+    @keyframes ripple-animation {
+        to {
+            transform: scale(4);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
+
+// ==================== PERFORMANCE MONITORING ====================
+if ('performance' in window) {
+    window.addEventListener('load', () => {
+        const perfData = performance.getEntriesByType('navigation')[0];
+        console.log(`Page loaded in ${(perfData.loadEventEnd - perfData.fetchStart).toFixed(2)}ms`);
+    });
+}
+
+// ==================== SERVICE WORKER REGISTRATION (for PWA) ====================
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        // Uncomment when you have a service worker file
+        // navigator.serviceWorker.register('/sw.js')
+        //     .then(reg => console.log('Service Worker registered'))
+        //     .catch(err => console.log('Service Worker registration failed'));
+    });
+}
+
+function getpredict() {
+    window.location.href="predictpage.html";
+}
+function scheme()
+{
+    window.location.href="schemes.html";
+}
+
+function changeLang(lang) {
+  i18next.changeLanguage(lang, updateContent);
+}
+
+async function sendChat() {
+  const msg = document.getElementById("chatInput").value;
+
+  const res = await fetch("/chat", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({message: msg})
+  });
+
+  const data = await res.json();
+  document.getElementById("chatBox").innerText = data.reply;
+}
+
+  function googleTranslateElementInit() {
+  new google.translate.TranslateElement(
+    {pageLanguage: 'en'},
+    'google_translate_element'
+  );
+}
+
+// Load Google Translate script (hidden)
+var gt = document.createElement('script');
+gt.src = "https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+document.body.appendChild(gt);
+
+// Function to change language
+function translatePage(lang) {
+  if (lang === '') return;
+  var selectField = document.querySelector('.goog-te-combo');
+  if (selectField) {
+    selectField.value = lang;
+    selectField.dispatchEvent(new Event('change'));
+  }
+}

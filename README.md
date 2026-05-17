@@ -31,6 +31,8 @@ The file **never executes**. It is only read byte-by-byte and pattern-matched. E
 <p align="center">
 <img src="https://github.com/user-attachments/assets/910567aa-74c8-4f1b-a7af-41d86cbf6cae" width="400">
 </p>
+<img width="981" height="639" alt="Application Preview" src="https://github.com/user-attachments/assets/17f72879-7f20-43e9-a8bc-f05ce388c9f1" />
+
 
 > The full end-to-end pipeline from file ingestion to verdict output.
 
